@@ -2,6 +2,7 @@
 export interface User {
   id: string;
   username: string;
+  name: string;
   email: string;
   avatar?: string;
   bio?: string;
@@ -17,7 +18,8 @@ export interface Event {
   imageUrl?: string;
   authorId: string;
   author: User;
-  attendees: User[];
+  organizer: User;
+  attendees: number;
   comments: Comment[];
   createdAt: Date;
 }
@@ -38,6 +40,7 @@ export interface Message {
   sender: User;
   receiverId: string;
   receiver: User;
+  conversationId: string;
   createdAt: Date;
   read: boolean;
 }
@@ -45,6 +48,7 @@ export interface Message {
 export interface Conversation {
   id: string;
   participants: User[];
+  otherUser: User;
   lastMessage?: Message;
   updatedAt: Date;
 }

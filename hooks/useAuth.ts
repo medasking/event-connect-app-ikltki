@@ -39,6 +39,7 @@ export const useAuth = () => {
         const newUser: User = {
           id: Date.now().toString(),
           username,
+          name: username.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
           email,
           createdAt: new Date(),
         };
@@ -54,11 +55,17 @@ export const useAuth = () => {
     setUser(null);
   };
 
+  const logout = () => {
+    console.log('Logging out');
+    setUser(null);
+  };
+
   return {
     user,
     isLoading,
     signIn,
     signUp,
     signOut,
+    logout,
   };
 };
