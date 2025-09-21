@@ -1,31 +1,23 @@
 
 import React, { useState } from 'react';
-import { View, ScrollView, RefreshControl } from 'react-native';
+import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { commonStyles, colors } from '../styles/commonStyles';
+import { commonStyles } from '../styles/commonStyles';
 import { useAuth } from '../hooks/useAuth';
-import { mockEvents } from '../data/mockData';
-import EventCard from '../components/EventCard';
 import TabBar from '../components/TabBar';
 import AuthScreen from './auth';
 import CreateEventScreen from './create-event';
+import AdminCreateScreen from './admin-create';
 import MessagesScreen from './messages';
 import ProfileScreen from './profile';
 import EventDetailScreen from './event-detail';
+import MainFeed from './main-feed';
+import UserPosts from './user-posts';
 
 export default function MainScreen() {
   const { user, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const onRefresh = () => {
-    console.log('Refreshing feed...');
-    setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
-  };
 
   const handleEventPress = (eventId: string) => {
     console.log('Event pressed:', eventId);
@@ -39,6 +31,11 @@ export default function MainScreen() {
 
   const handleAttend = (eventId: string) => {
     console.log('Attend event:', eventId);
+  };
+
+  const handleCreatePost = () => {
+    console.log('Navigate to create post');
+    setActiveTab('create');
   };
 
   if (isLoading) {
@@ -68,23 +65,23 @@ export default function MainScreen() {
     switch (activeTab) {
       case 'home':
         return (
-          <ScrollView
-            style={{ flex: 1 }}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-          >
-            {mockEvents.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                onPress={() => handleEventPress(event.id)}
-                onComment={() => handleComment(event.id)}
-                onAttend={() => handleAttend(event.id)}
-              />
-            ))}
-          </ScrollView>
+          <MainFeed
+            onEventPress={handleEventPress}
+            onComment={handleComment}
+            onAttend={handleAttend}
+          />
         );
+      case 'user-posts':
+        return (
+          <UserPosts
+            onEventPress={handleEventPress}
+            onComment={handleComment}
+            onAttend={handleAttend}
+            onCreatePost={handleCreatePost}
+          />
+        );
+      case 'admin-create':
+        return user?.isAdmin ? <AdminCreateScreen /> : <CreateEventScreen />;
       case 'create':
         return <CreateEventScreen />;
       case 'messages':

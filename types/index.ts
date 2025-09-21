@@ -6,6 +6,7 @@ export interface User {
   email: string;
   avatar?: string;
   bio?: string;
+  isAdmin?: boolean;
   createdAt: Date;
 }
 
@@ -21,6 +22,7 @@ export interface Event {
   organizer: User;
   attendees: number;
   comments: Comment[];
+  isAdminPost?: boolean;
   createdAt: Date;
 }
 
