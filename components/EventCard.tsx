@@ -1,9 +1,9 @@
 
-import { colors, commonStyles } from '../styles/commonStyles';
-import Icon from './Icon';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import React from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { colors, commonStyles } from '../styles/commonStyles';
 import { Event } from '../types';
+import Icon from './Icon';
 
 interface EventCardProps {
   event: Event;
@@ -13,7 +13,7 @@ interface EventCardProps {
 }
 
 export default function EventCard({ event, onPress, onComment, onAttend }: EventCardProps) {
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date): string => {
     return date.toLocaleDateString('en-US', {
       weekday: 'short',
       month: 'short',
@@ -24,57 +24,93 @@ export default function EventCard({ event, onPress, onComment, onAttend }: Event
   };
 
   return (
-    <TouchableOpacity style={[styles.container, event.isAdminPost && styles.adminPost]} onPress={onPress}>
+    <TouchableOpacity style={[
+      commonStyles.card,
+      styles.container,
+      event.isAdminPost && styles.adminCard
+    ]} onPress={onPress}>
+      {/* Admin Post Header */}
+      {event.isAdminPost && (
+        <View style={styles.adminHeader}>
+          <View style={styles.adminBadge}>
+            <Icon name="shield-checkmark" size={16} color={colors.success} />
+            <Text style={styles.adminBadgeText}>OFFICIAL</Text>
+          </View>
+          <View style={styles.adminIndicator}>
+            <Text style={styles.adminIndicatorText}>Admin Post</Text>
+          </View>
+        </View>
+      )}
+
+      {/* Event Image */}
       {event.imageUrl && (
         <Image source={{ uri: event.imageUrl }} style={styles.image} />
       )}
-      
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <View style={styles.authorInfo}>
-            {event.author.avatar && (
-              <Image source={{ uri: event.author.avatar }} style={styles.avatar} />
-            )}
-            <View style={styles.authorDetails}>
-              <View style={styles.authorNameRow}>
-                <Text style={styles.authorName}>{event.author.name}</Text>
-                {event.isAdminPost && (
-                  <View style={styles.adminBadge}>
-                    <Icon name="shield-checkmark" size={14} color={colors.background} />
-                    <Text style={styles.adminBadgeText}>ADMIN</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={styles.date}>{formatDate(event.createdAt)}</Text>
-            </View>
-          </View>
-        </View>
 
-        <Text style={[styles.title, event.isAdminPost && styles.adminTitle]}>{event.title}</Text>
+      {/* Event Content */}
+      <View style={styles.content}>
+        <Text style={[
+          styles.title,
+          event.isAdminPost && styles.adminTitle
+        ]}>
+          {event.title}
+        </Text>
+        
         <Text style={styles.description} numberOfLines={3}>
           {event.description}
         </Text>
 
-        <View style={styles.eventDetails}>
+        <View style={styles.details}>
           <View style={styles.detailItem}>
-            <Icon name="calendar-outline" size={16} color={colors.grey} />
+            <Icon name="calendar-outline" size={16} color={colors.textSecondary} />
             <Text style={styles.detailText}>{formatDate(event.date)}</Text>
           </View>
+          
           <View style={styles.detailItem}>
-            <Icon name="location-outline" size={16} color={colors.grey} />
+            <Icon name="location-outline" size={16} color={colors.textSecondary} />
             <Text style={styles.detailText}>{event.location}</Text>
           </View>
         </View>
 
+        {/* Organizer Info */}
+        <View style={styles.organizer}>
+          {event.organizer.avatar && (
+            <Image source={{ uri: event.organizer.avatar }} style={styles.avatar} />
+          )}
+          <View style={styles.organizerInfo}>
+            <Text style={styles.organizerName}>
+              {event.organizer.name}
+              {event.organizer.isAdmin && (
+                <Text style={styles.adminTag}> • Admin</Text>
+              )}
+            </Text>
+            <Text style={styles.organizerRole}>
+              {event.isAdminPost ? 'Official Announcement' : 'Event Organizer'}
+            </Text>
+          </View>
+        </View>
+
+        {/* Action Buttons */}
         <View style={styles.actions}>
-          <TouchableOpacity style={styles.actionButton} onPress={onAttend}>
-            <Icon name="checkmark-circle-outline" size={20} color={colors.primary} />
-            <Text style={styles.actionText}>{event.attendees} Attending</Text>
-          </TouchableOpacity>
-          
           <TouchableOpacity style={styles.actionButton} onPress={onComment}>
-            <Icon name="chatbubble-outline" size={20} color={colors.grey} />
-            <Text style={styles.actionText}>{event.comments.length} Comments</Text>
+            <Icon name="chatbubble-outline" size={18} color={colors.textSecondary} />
+            <Text style={styles.actionText}>
+              {event.comments?.length || 0} Comments
+            </Text>
+          </TouchableOpacity>
+
+          {!event.isAdminPost && (
+            <TouchableOpacity style={styles.actionButton} onPress={onAttend}>
+              <Icon name="people-outline" size={18} color={colors.textSecondary} />
+              <Text style={styles.actionText}>
+                {event.attendees} Attending
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity style={styles.actionButton}>
+            <Icon name="share-outline" size={18} color={colors.textSecondary} />
+            <Text style={styles.actionText}>Share</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -84,105 +120,120 @@ export default function EventCard({ event, onPress, onComment, onAttend }: Event
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.background,
     marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 12,
-    ...commonStyles.shadow,
+    marginBottom: 16,
   },
-  adminPost: {
-    borderWidth: 2,
-    borderColor: colors.primary,
+  adminCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: colors.success,
+    backgroundColor: colors.successLight,
   },
-  image: {
-    width: '100%',
-    height: 200,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-  },
-  content: {
-    padding: 16,
-  },
-  header: {
+  adminHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 12,
-  },
-  authorInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-  },
-  authorDetails: {
-    flex: 1,
-  },
-  authorNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  authorName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginRight: 8,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.success + '30',
   },
   adminBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primary,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
+    backgroundColor: colors.success,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
   },
   adminBadgeText: {
     fontSize: 10,
     fontWeight: '700',
     color: colors.background,
-    marginLeft: 2,
+    letterSpacing: 0.5,
   },
-  date: {
-    fontSize: 12,
-    color: colors.grey,
-    marginTop: 2,
+  adminIndicator: {
+    backgroundColor: colors.success + '20',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  adminIndicatorText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: colors.success,
+  },
+  image: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  content: {
+    gap: 8,
   },
   title: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: colors.text,
-    marginBottom: 8,
+    lineHeight: 24,
   },
   adminTitle: {
-    color: colors.primary,
+    color: colors.success,
+    fontWeight: '700',
   },
   description: {
     fontSize: 14,
-    color: colors.grey,
+    color: colors.textSecondary,
     lineHeight: 20,
-    marginBottom: 16,
   },
-  eventDetails: {
-    marginBottom: 16,
+  details: {
+    gap: 8,
+    marginTop: 4,
   },
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    gap: 6,
   },
   detailText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  organizer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  organizerInfo: {
+    flex: 1,
+  },
+  organizerName: {
     fontSize: 14,
-    color: colors.grey,
-    marginLeft: 8,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  adminTag: {
+    color: colors.success,
+    fontSize: 12,
+  },
+  organizerRole: {
+    fontSize: 12,
+    color: colors.textSecondary,
   },
   actions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: colors.border,
@@ -190,10 +241,12 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
   },
   actionText: {
-    fontSize: 14,
-    color: colors.grey,
-    marginLeft: 6,
+    fontSize: 12,
+    color: colors.textSecondary,
   },
 });

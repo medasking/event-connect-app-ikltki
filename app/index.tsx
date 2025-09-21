@@ -4,20 +4,28 @@ import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { commonStyles } from '../styles/commonStyles';
 import { useAuth } from '../hooks/useAuth';
-import TabBar from '../components/TabBar';
-import AuthScreen from './auth';
-import CreateEventScreen from './create-event';
-import AdminCreateScreen from './admin-create';
-import MessagesScreen from './messages';
-import ProfileScreen from './profile';
-import EventDetailScreen from './event-detail';
+import { useAdminAuth } from '../hooks/useAdminAuth';
+
+// Screen imports
 import MainFeed from './main-feed';
+import CreateEventScreen from './create-event';
+import ProfileScreen from './profile';
+import AuthScreen from './auth';
 import UserPosts from './user-posts';
+import EventDetailScreen from './event-detail';
+import MessagesScreen from './messages';
+import AdminCreateScreen from './admin-create';
+import AdminLoginScreen from './admin-login';
+
+// Component imports
+import TabBar from '../components/TabBar';
 
 export default function MainScreen() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isAdmin } = useAuth();
+  const { isAdminAuthenticated } = useAdminAuth();
   const [activeTab, setActiveTab] = useState('home');
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
 
   const handleEventPress = (eventId: string) => {
     console.log('Event pressed:', eventId);
@@ -34,34 +42,58 @@ export default function MainScreen() {
   };
 
   const handleCreatePost = () => {
-    console.log('Navigate to create post');
+    console.log('Create post pressed');
     setActiveTab('create');
   };
 
-  if (isLoading) {
-    return (
-      <SafeAreaView style={commonStyles.container}>
-        <View style={commonStyles.content}>
-          {/* Loading state could be enhanced with a proper loading component */}
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const handleTabPress = (tab: string) => {
+    console.log('Tab pressed:', tab);
+    
+    // Handle admin tab specially
+    if (tab === 'admin-create') {
+      if (!isAdmin() || !isAdminAuthenticated()) {
+        setShowAdminLogin(true);
+        return;
+      }
+    }
+    
+    setActiveTab(tab);
+    setSelectedEventId(null);
+  };
 
-  if (!user) {
-    return <AuthScreen />;
-  }
+  const handleAdminAuthenticated = () => {
+    console.log('Admin authenticated successfully');
+    setShowAdminLogin(false);
+    setActiveTab('admin-create');
+  };
 
-  if (selectedEventId) {
-    return (
-      <EventDetailScreen 
-        eventId={selectedEventId} 
-        onBack={() => setSelectedEventId(null)} 
-      />
-    );
-  }
+  const handleBackFromAdminLogin = () => {
+    console.log('Back from admin login');
+    setShowAdminLogin(false);
+  };
 
   const renderContent = () => {
+    // Show admin login if requested
+    if (showAdminLogin) {
+      return (
+        <AdminLoginScreen
+          onAdminAuthenticated={handleAdminAuthenticated}
+          onBack={handleBackFromAdminLogin}
+        />
+      );
+    }
+
+    // Show event detail if selected
+    if (selectedEventId) {
+      return (
+        <EventDetailScreen
+          eventId={selectedEventId}
+          onBack={() => setSelectedEventId(null)}
+        />
+      );
+    }
+
+    // Show appropriate screen based on active tab
     switch (activeTab) {
       case 'home':
         return (
@@ -81,7 +113,12 @@ export default function MainScreen() {
           />
         );
       case 'admin-create':
-        return user?.isAdmin ? <AdminCreateScreen /> : <CreateEventScreen />;
+        // Double-check admin authentication
+        if (!isAdmin() || !isAdminAuthenticated()) {
+          setShowAdminLogin(true);
+          return null;
+        }
+        return <AdminCreateScreen />;
       case 'create':
         return <CreateEventScreen />;
       case 'messages':
@@ -89,15 +126,28 @@ export default function MainScreen() {
       case 'profile':
         return <ProfileScreen />;
       default:
-        return null;
+        return (
+          <MainFeed
+            onEventPress={handleEventPress}
+            onComment={handleComment}
+            onAttend={handleAttend}
+          />
+        );
     }
   };
 
+  // Show auth screen if user is not authenticated
+  if (!user && !isLoading) {
+    return <AuthScreen />;
+  }
+
   return (
     <SafeAreaView style={commonStyles.container}>
-      <View style={{ flex: 1 }}>
+      <View style={commonStyles.container}>
         {renderContent()}
-        <TabBar activeTab={activeTab} onTabPress={setActiveTab} />
+        {!showAdminLogin && !selectedEventId && (
+          <TabBar activeTab={activeTab} onTabPress={handleTabPress} />
+        )}
       </View>
     </SafeAreaView>
   );

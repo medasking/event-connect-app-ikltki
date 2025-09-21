@@ -1,30 +1,49 @@
 
 import { useState, useEffect } from 'react';
 import { User } from '../types';
-import { currentUser } from '../data/mockData';
+import { mockUsers } from '../data/mockData';
+import { useAdminAuth } from './useAdminAuth';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { adminUser, isAdminAuthenticated } = useAdminAuth();
 
   useEffect(() => {
-    // Simulate loading
+    // Check for admin authentication first
+    if (isAdminAuthenticated() && adminUser) {
+      setUser(adminUser);
+      setIsLoading(false);
+      return;
+    }
+
+    // Simulate loading for regular users
     setTimeout(() => {
-      setUser(currentUser);
+      // For demo purposes, set a regular user if no admin is authenticated
+      if (!adminUser) {
+        setUser(mockUsers[1]); // Sarah Smith - regular user
+      }
       setIsLoading(false);
     }, 1000);
-  }, []);
+  }, [adminUser, isAdminAuthenticated]);
 
   const signIn = async (email: string, password: string): Promise<boolean> => {
-    console.log('Signing in with:', email);
+    console.log('Regular user signing in with:', email);
     setIsLoading(true);
     
     // Simulate API call
     return new Promise((resolve) => {
       setTimeout(() => {
-        setUser(currentUser);
-        setIsLoading(false);
-        resolve(true);
+        // Find user by email (excluding admin users for regular login)
+        const foundUser = mockUsers.find(u => u.email === email && !u.isAdmin);
+        if (foundUser) {
+          setUser(foundUser);
+          setIsLoading(false);
+          resolve(true);
+        } else {
+          setIsLoading(false);
+          resolve(false);
+        }
       }, 1500);
     });
   };
@@ -41,6 +60,7 @@ export const useAuth = () => {
           username,
           name: username.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
           email,
+          isAdmin: false, // Regular users are never admin
           createdAt: new Date(),
         };
         setUser(newUser);
@@ -60,6 +80,11 @@ export const useAuth = () => {
     setUser(null);
   };
 
+  // Enhanced admin check
+  const isAdmin = (): boolean => {
+    return user?.isAdmin === true && isAdminAuthenticated();
+  };
+
   return {
     user,
     isLoading,
@@ -67,5 +92,6 @@ export const useAuth = () => {
     signUp,
     signOut,
     logout,
+    isAdmin,
   };
 };

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { commonStyles, colors } from '../styles/commonStyles';
 import { useAuth } from '../hooks/useAuth';
 import Button from '../components/Button';
+import Icon from '../components/Icon';
 
 export default function AuthScreen() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -20,6 +21,16 @@ export default function AuthScreen() {
       return;
     }
 
+    // Check if trying to sign in with admin email
+    if (!isSignUp && email.toLowerCase().includes('admin')) {
+      Alert.alert(
+        'Admin Access Required',
+        'This appears to be an admin account. Admin users must use the secure admin login process.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
     setIsLoading(true);
     try {
       let success = false;
@@ -30,7 +41,7 @@ export default function AuthScreen() {
       }
 
       if (!success) {
-        Alert.alert('Error', 'Authentication failed');
+        Alert.alert('Error', 'Authentication failed. Please check your credentials.');
       }
     } catch (error) {
       console.log('Auth error:', error);
@@ -44,6 +55,10 @@ export default function AuthScreen() {
     <SafeAreaView style={commonStyles.container}>
       <View style={styles.container}>
         <View style={styles.content}>
+          <View style={styles.logoContainer}>
+            <Icon name="calendar" size={48} color={colors.primary} />
+          </View>
+          
           <Text style={commonStyles.title}>
             {isSignUp ? 'Create Account' : 'Welcome Back'}
           </Text>
@@ -101,6 +116,13 @@ export default function AuthScreen() {
               }
             </Text>
           </TouchableOpacity>
+
+          <View style={styles.adminNotice}>
+            <Icon name="shield-outline" size={16} color={colors.textSecondary} />
+            <Text style={styles.adminNoticeText}>
+              Admin users require secure authentication
+            </Text>
+          </View>
         </View>
       </View>
     </SafeAreaView>
@@ -115,6 +137,15 @@ const styles = StyleSheet.create({
   },
   content: {
     alignItems: 'center',
+  },
+  logoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
   },
   subtitle: {
     textAlign: 'center',
@@ -144,5 +175,20 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 14,
     fontWeight: '500',
+  },
+  adminNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 32,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: 8,
+  },
+  adminNoticeText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
   },
 });
